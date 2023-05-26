@@ -1,0 +1,49 @@
+{{- if .Values.textgen.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-textgen
+  labels:
+    katenary.io/component: textgen
+    katenary.io/project: '{{ .Chart.Name }}'
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: 01034b607ec486ee5d6156eba0ff79f0fc8212af
+    katenary.io/version: 2.0.0-beta2
+{{- range $key, $value := .Values.textgen.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+{{- end }}
+spec:
+  ingressClassName: {{ .Values.textgen.ingress.ingressClassName }}
+  tls:
+    - hosts:
+        - {{ .Values.textgen.ingress.host }}
+      secretName: {{ .Values.textgen.ingress.tlsSecretName }}
+  rules:
+    - host: {{ .Values.textgen.ingress.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ .Release.Name }}-textgen
+                port:
+                  name: webui
+          - pathType: Prefix
+            path: /api/v1/stream
+            backend:
+              service:
+                name: {{ .Release.Name }}-textgen
+                port:
+                  name: api-stream
+          - pathType: Prefix
+            path: /api/v1/generate
+            backend:
+              service:
+                name: {{ .Release.Name }}-textgen
+                port:
+                  name: api-generate
+{{- else }}
+# Ingress is disabled for textgen
+{{- end }}

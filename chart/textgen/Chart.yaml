@@ -1,0 +1,8 @@
+# Create on 2023-05-26T10:58:08+02:00
+# Katenary command line: katenary convert
+apiVersion: v2
+appVersion: master-136aa79
+description: A helm chart for oobabooga/text-generation-webui
+name: textgen
+type: application
+version: 0.1.0

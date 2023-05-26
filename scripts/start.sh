@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Remove the models directory and create a symbolic link
-rm -r /app/text-generation-webui/models
-ln -s /models /app/text-generation-webui/models
+# Copy all data from characters.dist
+cp -r /app/text-generation-webui/characters.dist/Example* /data/characters/
+cp -r /app/text-generation-webui/characters.dist/instruction-following /data/characters/
 
 # Start the server
-conda run --no-capture-output -n textgen python server.py "$@"
+/opt/conda/bin/conda run --no-capture-output -n textgen python server.py "$@"

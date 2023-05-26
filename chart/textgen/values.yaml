@@ -1,0 +1,28 @@
+textgen:
+  # Image definition
+  repository:
+    image: git.hirstgroup.net/jdhirst/oobabooga-docker
+    tag: v0.0.6
+
+  # Authentication credentials for webui
+  auth:
+    username: 'user'
+    password: 'password'
+
+  # Data persistence for models and character data
+  persistence:
+    data:
+      capacity: 1Gi
+      enabled: false
+  
+  # Key to use for the telegram bot. Get this from Telegram's botfather.
+  telegramKey: replaceme
+
+  # An ingress can be created
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+    ingressClassName: nginx
+    host: your-domain.com
+    tlsSecretName: textgen-tls-secret

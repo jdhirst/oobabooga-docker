@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ .Release.Name }}-textgen'
+  labels:
+    katenary.io/component: textgen
+    katenary.io/project: '{{ .Chart.Name }}'
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: 01034b607ec486ee5d6156eba0ff79f0fc8212af
+    katenary.io/version: 2.0.0-beta2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      katenary.io/component: textgen
+      katenary.io/release: '{{ .Release.Name }}'
+  template:
+    metadata:
+      labels:
+        katenary.io/component: textgen
+        katenary.io/release: '{{ .Release.Name }}'
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      initContainers:
+        - name: download-model
+          image: alpine:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ ! -f "/data/models/Manticore-13B.ggmlv3.q4_1.bin" ]; then
+                mkdir -p /data/models;mkdir -p /data/characters;wget -O /data/models/Manticore-13B.ggmlv3.q4_1.bin \
+                "https://huggingface.co/TheBloke/Manticore-13B-GGML/resolve/main/Manticore-13B.ggmlv3.q4_1.bin"
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: textgen
+          image: '{{ .Values.textgen.repository.image }}{{ if ne .Values.textgen.repository.tag "" }}:{{ .Values.textgen.repository.tag }}{{ end }}'
+          ports:
+            - name: webui
+              containerPort: 7860
+            - name: api-stream
+              containerPort: 5005
+            - name: api-generate
+              containerPort: 5000
+          env:
+            - name: USER
+              value: '{{ tpl .Values.textgen.auth.username . }}'
+            - name: PASSWORD
+              value: '{{ tpl .Values.textgen.auth.password . }}'
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - /app/start.sh
+            - --model
+            - Manticore-13B.ggmlv3.q4_1.bin
+            - --extensions
+            - api
+            - gallery
+            - long_term_memory
+            - ui_tweaks
+            - telegram_bot
+            - --api
+            - --chat
+            - --gradio-auth
+            - $(USER):$(PASSWORD)
+            - --cpu
+            - --mlock
+            - --listen
+            - --listen-port
+            - "7860"
+          volumeMounts:
+            - mountPath: /data
+              name: data
+            - name: secret-volume
+              mountPath: /app/text-generation-webui/extensions/telegram_bot/telegram_token.txt
+              subPath: telegram-key
+      volumes:
+        - name: data
+          {{- if  .Values.textgen.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: '{{ .Release.Name }}-data'
+          {{ else }}
+          emptyDir: {}
+          {{- end }}
+        - name: secret-volume
+          secret:
+            secretName: '{{ .Release.Name }}-telegram-secret'

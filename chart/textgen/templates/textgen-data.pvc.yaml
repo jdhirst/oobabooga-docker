@@ -1,0 +1,20 @@
+{{ if .Values.textgen.persistence.data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .Release.Name }}-data'
+  labels:
+    katenary.io/component: textgen
+    katenary.io/project: '{{ .Chart.Name }}'
+    katenary.io/pvc-name: data
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: 01034b607ec486ee5d6156eba0ff79f0fc8212af
+    katenary.io/version: 2.0.0-beta2
+spec:
+  resources:
+    requests:
+      storage: '{{ .Values.textgen.persistence.data.capacity }}'
+  accessModes:
+    - ReadWriteOnce
+{{- end -}}
